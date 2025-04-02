@@ -1,74 +1,79 @@
-// JavaScript Document
-// API Key de OpenAI
-const openaiAPIKey = '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'; // Reemplaza con tu clave API de OpenAI
-const assistantModel = 'gpt-4o'; // O el modelo que prefieras (GPT-3.5, etc.)
+// Tu clave API de OpenAI
+const openaiAPIKey = "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";  // Reemplaza con tu clave API
 
-// Elementos del DOM
-const chatWidget = document.getElementById("chat-widget");
-const chatContainer = document.getElementById("chat-container");
-const userInput = document.getElementById("user-input");
-const sendBtn = document.getElementById("send-btn");
-const closeBtn = document.getElementById("close-btn");
+// El modelo de OpenAI que deseas usar (por ejemplo, gpt-3.5-turbo o gpt-4)
+const assistantModel = "gpt-4";  // Puedes cambiar el modelo según tu preferencia
 
-// Mostrar el widget
-function showWidget() {
-    chatWidget.style.display = 'flex';
-}
-
-// Cerrar el widget
-closeBtn.addEventListener("click", function() {
-    chatWidget.style.display = 'none';
-});
-
-// Enviar mensaje a la API de OpenAI
+// Función para manejar el envío de mensajes a OpenAI
 async function sendToOpenAI(message) {
-    const url = "https://api.openai.com/v1/chat/completions";
+    const url = "https://api.openai.com/v1/chat/completions";  // Endpoint de la API de OpenAI
+
     const headers = {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${openaiAPIKey}`,
+        "Authorization": `Bearer ${openaiAPIKey}`,  // Aquí se coloca la clave API
     };
 
     const body = JSON.stringify({
         model: assistantModel,
-        messages: [{ role: "user", content: message }],
-        max_tokens: 150
+        messages: [{ role: "user", content: message }],  // El mensaje del usuario
+        max_tokens: 150,  // Ajusta el límite de tokens (puedes modificarlo según lo necesites)
     });
 
     try {
+        // Realizar la solicitud POST a la API de OpenAI
         const response = await fetch(url, {
             method: "POST",
             headers: headers,
-            body: body
+            body: body,
         });
+
         const data = await response.json();
-        return data.choices[0].message.content; // Obtener la respuesta
+
+        // Verifica si la respuesta fue exitosa
+        if (response.ok) {
+            // Devuelve la respuesta del modelo de OpenAI
+            return data.choices[0].message.content;
+        } else {
+            console.error("Error en la solicitud:", data);  // Muestra detalles del error
+            return "Lo siento, ocurrió un error al procesar tu solicitud.";
+        }
     } catch (error) {
         console.error("Error al conectar con OpenAI:", error);
         return "Lo siento, ocurrió un error al procesar tu solicitud.";
     }
 }
 
-// Mostrar el mensaje en el chat
-function showMessageInWidget(sender, message) {
-    const messageDiv = document.createElement("div");
-    messageDiv.className = `message ${sender === "Usuario" ? "user-message" : "assistant-message"}`;
-    messageDiv.textContent = message;
-    chatContainer.appendChild(messageDiv);
-    chatContainer.scrollTop = chatContainer.scrollHeight; // Desplazar hacia abajo
+// Función para manejar la interacción con el usuario en el frontend
+function handleChat() {
+    const userMessage = document.getElementById("user-input").value;  // Obtiene el mensaje del usuario
+    if (userMessage.trim() === "") return;
+
+    // Muestra el mensaje del usuario en el chat
+    appendMessage(userMessage, "user");
+
+    // Limpia el campo de entrada
+    document.getElementById("user-input").value = "";
+
+    // Envia el mensaje a OpenAI y muestra la respuesta
+    sendToOpenAI(userMessage).then((responseMessage) => {
+        // Muestra la respuesta del asistente
+        appendMessage(responseMessage, "assistant");
+    });
 }
 
-// Manejar el envío del mensaje
-sendBtn.addEventListener("click", async () => {
-    const message = userInput.value.trim();
-    if (message) {
-        showMessageInWidget("Usuario", message);
-        userInput.value = "";
-        const assistantResponse = await sendToOpenAI(message);
-        showMessageInWidget("Asistente", assistantResponse);
-    }
-});
+// Función para mostrar los mensajes en el chat
+function appendMessage(message, sender) {
+    const chatBox = document.getElementById("chat-box");
 
-// Mostrar el widget cuando el usuario haga clic en un botón o en algún evento
-document.addEventListener("DOMContentLoaded", () => {
-    setTimeout(showWidget, 1000); // Abre el widget después de 1 segundo
+    const messageElement = document.createElement("div");
+    messageElement.classList.add(sender);
+    messageElement.innerText = message;
+
+    chatBox.appendChild(messageElement);
+}
+
+// Manejador para el evento de envío del formulario
+document.getElementById("chat-form").addEventListener("submit", function (event) {
+    event.preventDefault();  // Previene el envío por defecto del formulario
+    handleChat();  // Llama a la función para manejar el chat
 });
